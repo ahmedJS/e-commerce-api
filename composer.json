@@ -1,0 +1,12 @@
+{
+    "autoload": {
+        "psr-4": {
+            "EntitiesLibrary\\": "src/"
+        }
+    },
+    "require": {
+        "brick/event": "^0.1.1",
+        "envms/fluentpdo": "^2.2.0",
+        "phpunit/phpunit": "^9.3.0."
+    }
+}
