@@ -4,8 +4,9 @@ use PHPUnit\Framework\Constraint\Callback;
 use Brick\Event\EventDispatcher;
 use EntitiesLibrary\LibsFactory;
 use Closure;
+use Psr\EventDispatcher\EventDispatcherInterface;
 
-class EventsManager {
+class EventsManager{
     private EventDispatcher $eventDispatcher;
 
     function __construct(){

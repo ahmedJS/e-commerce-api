@@ -22,6 +22,7 @@ class ComposerStaticInitbae3db8e24c9e5fb4d5433fa0acfcdd7
         ),
         'P' => 
         array (
+            'Psr\\EventDispatcher\\' => 20,
             'Prophecy\\' => 9,
             'PhpParser\\' => 10,
         ),
@@ -51,6 +52,10 @@ class ComposerStaticInitbae3db8e24c9e5fb4d5433fa0acfcdd7
         'Webmozart\\Assert\\' => 
         array (
             0 => __DIR__ . '/..' . '/webmozart/assert/src',
+        ),
+        'Psr\\EventDispatcher\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/psr/event-dispatcher/src',
         ),
         'Prophecy\\' => 
         array (
