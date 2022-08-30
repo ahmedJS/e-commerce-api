@@ -1,30 +1,43 @@
 <?php
 
 namespace EntitiesLibrary;
-use EntitiesLibrary\LibsFactory;
-use Brick\Event\EventDispatcher;
-use PharIo\Manifest\Application;
-
 class EntitiesFactory {
-    function __construct(DBAL $dbal,EventDispatcher $eventDispatcher)
+    function __construct(private DBAL $dbal,private EventsManager $eventsManager)
     {
         $this->dbal =$dbal;
-        $this->eventDispatcher = $eventDispatcher;
+        $this->eventsManager = $eventsManager;
     }
 
     /**
-     * @param string $fullQualifiedClassName `namespace` and the `ApplicationEntity` class to be instantiated
      * @param array $payload an `Associative Array` That Contains At least the `id` field
      * @return ApplicationEntity
      */
-    function getEntity(string $fullQualifiedClassName, array $payload) : ApplicationEntity {
-        
-        $entity = ($fullQualifiedClassName)($this->dbal,$this->eventDispatcher); 
-
-        $entity->entityRuleMetaData = array_keys($payload);
-
-        $entity->entityMetaData = $payload;
-        
+    function CreateEntity(string $fullQualifiedClassName, array $payload) : ApplicationEntity {
+        $entity = new ($fullQualifiedClassName)
+                        (
+                            $this->dbal,
+                            $this->eventsManager,
+                            $payload
+                        ); 
         return $entity;
     }
+
+    function getEntity($fullQualifiedClassName,$id) : ApplicationEntity | null{
+        $entity_data = $this->dbal->get($id);
+
+        // if the data fetched successfully
+        if($entity_data)
+        {
+            return 
+             new ($fullQualifiedClassName)
+                    (   $fullQualifiedClassName::tableName,
+                        $this->dbal,$this->eventsManager,
+                        $entity_data
+                    ); 
+        }
+
+        // if not
+        return null;
+    }
+
 }

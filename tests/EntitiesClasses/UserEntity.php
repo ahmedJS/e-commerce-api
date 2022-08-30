@@ -5,15 +5,17 @@ use Brick\Event\EventDispatcher;
 use EntitiesLibrary\EventsManager;
 
 class UserEntity extends Entity{
+    public $_tableName = "users";
     function __construct
     (
-        string $tableName,
         DBAL $dbal,
-         EventsManager $eventsManager,
+        EventsManager $eventsManager,
+        array $payload = []
+
     )
 
     {
-        $this->tableName  = $tableName;
+        $this->tableName = $this->_tableName;
         $this->dbal = $dbal;
         $this->eventsManager = $eventsManager;
     }

@@ -1,20 +1,16 @@
 <?php
 namespace EntitiesLibrary;
 
-use Brick\Event\EventDispatcher;
 use EntitiesLibrary\EventsManager;
-use EntitiesLibrary\Exceptions\UnvalidSet;
+use EntitiesLibrary\Exceptions\EntityInitializationException;
 use EntitiesLibrary\Exceptions\OperationDontExistException;
-use ReflectionClass;
-use ReflectionObject;
-use ReflectionProperty;
 
 abstract class ApplicationEntity{
-    
+    public const REQUIRED_FIELDS = ["id"];
     abstract function __construct(
-        string $tableName,
         DBAL $dbal,
         EventsManager $eventsManager,
+        array $payload = []
     );
 
     protected $tableName;
@@ -23,7 +19,7 @@ abstract class ApplicationEntity{
 
     protected DBAL $dbal;
 
-   protected array $payload;
+    protected array $payload;
 
     function __call(string $name, array $arguments)
     {
@@ -34,56 +30,73 @@ abstract class ApplicationEntity{
     
     }
 
-    function getEntityRuleMetaData() : array{
-        return $this->_entityRuleMetaData ?? null;
-    }
-    function setEntityRuleMetaData($value){
-        $this->_entityRuleMetaData = $value ;
-    }
-    
-    function registerEventsManager(EventsManager $eventsManager) : void{
-        $this->EventsManager = $eventsManager;
-    }
-
-    function isTheEventsManagerExist() : bool{
-        return isset($this->EventsManager);
-    }
-
     /**
      * @param array $self_vars
      */
-    private function persist(array $self_vars) : ApplicationEntity{
+    private function persist() : ApplicationEntity{
 
-        $tableName = $this->tableName;
+        $state = $this->getState();
 
         if ($this->isExist()) {
-            $this->dbal->update($tableName, $self_vars);
-            $this->updateState($self_vars);
+            $this->dbal->update($this->tableName,$state );
+            $this->updateState($state);
         }
         else{
-            $this->dbal->insert($tableName,$self_vars);
+            $this->dbal->insert($this->tableName,$state);
         } 
 
         return $this;
     }
 
-    /**
-     * @param array $payload the updated data of the entity
-     */
-    private function updateState(array $payload){
-        foreach($payload as $field => $value)
-        {
-            $this->$field = $value;
+
+    function addState(array $state) : void{
+        foreach(self::REQUIRED_FIELDS as $field){
+            if (array_key_exists($field,$state))
+            {
+                $this->payload = $state ;
+            }
+            else
+            {
+                throw new EntityInitializationException("the `$field` field is required");
+            }
         }
+        
     }
 
+    /**
+     * @param array $items an associative array contain the payload of field
+     * that needed to be changed internally in the entity only
+     */
+    function updateStateItems(array $items) : void{
+        $final_result = [];
+        
+        // update the items and return array of whole with updated values
 
-    // under maintainance
-    function getMembers(){
-        $reflection_class = new ReflectionObject($this);
-        return $reflection_class->getProperties();
-   
+       $updatedItems = array_map(function($i , $v) use($items){
+            if(isset($items[$i]))
+            {
+                return [$i => $items[$i]];
+            }  
+            return [$i => $v];
+        },array_keys($this->payload),array_values($this->payload));
+
+        // solve the problem of multidimintional array of the outcome 
+        // and store it in `$final_result` array
+
+        foreach($updatedItems as $key => $value ){
+            if(is_array($value)){
+                $final_result[array_key_first($value)] = end($value);
+            }
+        }
+
+        // assert the outcome to the payload
+        $this->payload =  $final_result;
     }
+    
+    function getState() : array{
+        return $this->payload;
+    }
+
 
     private function delete(string | array $condition = "default") : ApplicationEntity{
 
@@ -95,69 +108,23 @@ abstract class ApplicationEntity{
     }
 
     private function isExist() : bool{
-        return $this->dbal->get($this->id) ? true : false;
+
+        // the 1 number is for security reasons
+
+        $id = $this->getId() ?? 1;
+
+        return $this->dbal->get($id) ? true : false;
+
     }
+
+    private function getId(){
+        if(isset($this->getState()["id"])){
+            return $this->getState()["id"];
+        }else
+        {
+            throw new EntityInitializationException("the `id` field is required");
+        }
+    }
+
+ 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// function __set($name, $value)
-// {
-//     switch($name) :
-
-//         // if the set value name is metadata
-
-//         case  "metadata" :
-
-//             $entityRuleMetaData = $this->getEntityRuleMetaData();
-
-//             // the value must be `array`
-//             if(!is_array($value))
-//             {
-//                 throw new 
-//                   UnvalidSet("the set data must be type of `array`");
-//             }else
-            
-//             // otherwise loop into associative array of values and extract it as properties into class
-
-//             {
-//                 foreach($value as $field => $_value) {
-//                     $result = array_search($field , $entityRuleMetaData,true);
-
-//                     if($result !== false)$this->$field = $_value;
-//                 };
-
-//             }
-//             break;
-//         // if the set value name is entityRuleMetaData
-
-//         case "entityRuleMetaData" :
-            
-//             // the value must be `array`
-
-//             if(!is_array($value))
-//             {
-//                 throw new 
-//                   UnvalidSet("the set data must be type of `array`");
-//             }else
-//             {
-//                 $this->setEntityRuleMetaData($value);
-//             }
-//             break;
-//         default : $this->$name = $value;
-//         break;
-//     endswitch;
-
-// }

@@ -14,6 +14,5 @@ final class LibsFactory{
     }
     
     static function getDBAL(){
-        return new DBAL;
     }
 }
